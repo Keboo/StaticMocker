@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StaticMocker.Fody", "StaticMocker.Fody\StaticMocker.Fody.csproj", "{E7A955B1-F4F0-47F8-83A9-A1C47CCBC3FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StaticMocker.Fody.Tests", "StaticMocker.Fody.Tests\StaticMocker.Fody.Tests.csproj", "{099A1CB1-80B5-4581-B9DB-8A3B8641DA14}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibraryToTest", "LibraryToTest\LibraryToTest.csproj", "{3E693AC1-D92D-4658-B9A3-6C7C8C59DD04}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E7A955B1-F4F0-47F8-83A9-A1C47CCBC3FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7A955B1-F4F0-47F8-83A9-A1C47CCBC3FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7A955B1-F4F0-47F8-83A9-A1C47CCBC3FF}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7A955B1-F4F0-47F8-83A9-A1C47CCBC3FF}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{099A1CB1-80B5-4581-B9DB-8A3B8641DA14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{099A1CB1-80B5-4581-B9DB-8A3B8641DA14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{099A1CB1-80B5-4581-B9DB-8A3B8641DA14}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{099A1CB1-80B5-4581-B9DB-8A3B8641DA14}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{3E693AC1-D92D-4658-B9A3-6C7C8C59DD04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E693AC1-D92D-4658-B9A3-6C7C8C59DD04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E693AC1-D92D-4658-B9A3-6C7C8C59DD04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E693AC1-D92D-4658-B9A3-6C7C8C59DD04}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

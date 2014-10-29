@@ -1,0 +1,12 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/LibraryToTest/bin/Debug
+/LibraryToTest/obj/Debug
+/StaticMocker.Fody/bin/Debug
+/StaticMocker.Fody/obj/Debug
+/StaticMocker.Fody.Tests/bin/Debug
+/StaticMocker.Fody.Tests/obj/Debug
+/StaticMocker.sln.DotSettings.user
+/StaticMocker.v12.suo
