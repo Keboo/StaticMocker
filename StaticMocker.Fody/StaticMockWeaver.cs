@@ -200,6 +200,7 @@ namespace StaticMocker.Fody
             if ( codeMethod == null )
             {
                 codeMethod = new CodeMemberMethod();
+                codeMethod.Attributes = MemberAttributes.Static | MemberAttributes.Public;
                 codeMethod.Name = method.Name;
                 codeMethod.ReturnType = new CodeTypeReference( method.ReturnType.FullName );
 
