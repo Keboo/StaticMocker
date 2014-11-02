@@ -56,8 +56,7 @@ namespace StaticMocker.Fody
                 var method = GetMethodInfo( methodExpression );
                 if ( !_CalledMethods.Contains( method ) )
                 {
-                    //TODO: need validation exception
-                    throw new Exception( string.Format( "{0} was not invoked", method ) );
+                    throw new StaticMockVerificationException( string.Format( "{0} was not invoked", method ) );
                 }
             }
 
@@ -77,30 +76,44 @@ namespace StaticMocker.Fody
                 return rv;
             }
 
-            bool IStaticInterceptor.AllowMethodCall( MethodInfo methodInfo )
+            bool IStaticInterceptor.AllowMethodCall( MockMethod mockMethod )
             {
+                var methodInfo = mockMethod.GetMethodInfo();
+
                 _CalledMethods.Add( methodInfo );
-                StaticMethod expected;
-                if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out expected ) )
+                StaticMethod staticMethod;
+                if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out staticMethod ) )
                 {
-                    expected.InvokeReplacement();
+                    staticMethod.Handle( mockMethod );
                     return false;
                 }
                 return true;
             }
 
-            bool IStaticInterceptor.AllowMethodCall( MethodInfo methodInfo, out object replacement )
-            {
-                _CalledMethods.Add( methodInfo );
-                StaticMethod expected;
-                if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out expected ) )
-                {
-                    replacement = expected.InvokeReplacement();
-                    return false;
-                }
-                replacement = null;
-                return true;
-            }
+            //bool IStaticInterceptor.AllowMethodCall( MethodInfo methodInfo )
+            //{
+            //    _CalledMethods.Add( methodInfo );
+            //    StaticMethod expected;
+            //    if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out expected ) )
+            //    {
+            //        expected.InvokeReplacement();
+            //        return false;
+            //    }
+            //    return true;
+            //}
+
+            //bool IStaticInterceptor.AllowMethodCall( MethodInfo methodInfo, out object replacement )
+            //{
+            //    _CalledMethods.Add( methodInfo );
+            //    StaticMethod expected;
+            //    if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out expected ) )
+            //    {
+            //        replacement = expected.InvokeReplacement();
+            //        return false;
+            //    }
+            //    replacement = null;
+            //    return true;
+            //}
 
             private static MethodInfo GetMethodInfo( Expression methodExpression )
             {
@@ -115,7 +128,7 @@ namespace StaticMocker.Fody
 
             private abstract class StaticMethod
             {
-                public abstract object InvokeReplacement();
+                public abstract void Handle( MockMethod mockMethod );
             }
 
             private class StaticVoidMethod : StaticMethod, IStaticMethod
@@ -124,53 +137,37 @@ namespace StaticMocker.Fody
 
                 public void RatherCall( Action replacement )
                 {
-                    if (replacement == null) throw new ArgumentNullException("replacement");
+                    if ( replacement == null ) throw new ArgumentNullException( "replacement" );
                     _ReplacementCall = replacement;
                 }
 
-                public override object InvokeReplacement()
+                public override void Handle( MockMethod mockMethod )
                 {
-                    if (_ReplacementCall != null)
+                    if ( _ReplacementCall != null )
                         _ReplacementCall();
-                    return null;
+                    //TODO: Out parameters
                 }
             }
 
             private class StaticReturnMethod<T> : StaticMethod, IStaticMethod<T>
             {
                 private Func<T> _ReplacementCall;
- 
+
                 public void RatherCall( Func<T> replacement )
                 {
-                    if (replacement == null) throw new ArgumentNullException("replacement");
+                    if ( replacement == null ) throw new ArgumentNullException( "replacement" );
                     _ReplacementCall = replacement;
                 }
 
-                public override object InvokeReplacement()
+                public override void Handle( MockMethod mockMethod )
                 {
                     if (_ReplacementCall != null)
-                        return _ReplacementCall();
-                    return null;
+                    {
+                        mockMethod.ReturnValue = _ReplacementCall();
+                    }
+                    //TODO: Out parameters
                 }
             }
         }
-    }
-
-    public interface IStaticMock : IDisposable
-    {
-        void Verify( Expression<Action> methodExpression );
-        void Verify<T>( Expression<Func<T>> methodExpression );
-        IStaticMethod Expect( Expression<Action> methodExpression );
-        IStaticMethod<T> Expect<T>( Expression<Func<T>> methodExpression );
-    }
-
-    public interface IStaticMethod
-    {
-        void RatherCall( Action replacement );
-    }
-
-    public interface IStaticMethod<in T>
-    {
-        void RatherCall( Func<T> replacement );
     }
 }

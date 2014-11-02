@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LibraryToTest
+﻿namespace LibraryToTest
 {
     public static class StaticClass
     {
@@ -23,12 +21,10 @@ namespace LibraryToTest
         {
             throw new ExpectedException();
         }
-    }
 
-    public class ExpectedException : Exception
-    {
-        public ExpectedException()
-            : base( "This exception is expected to be thrown" )
-        { }
+        public static void VoidWithStringParameter(string strParameter)
+        {
+            
+        }
     }
 }

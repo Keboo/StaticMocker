@@ -35,7 +35,7 @@ public class ModuleWeaver
             var assemblyPath = assemblyDefinition.MainModule.FullyQualifiedName;
             LogInfo( string.Format( "Intercepting static calls in assembly '{0}' ({1})", assembly.Value, assemblyPath ) );
 
-            StaticMockWeaver.InterceptStatics( assemblyPath, ModuleDefinition.AssemblyResolver, LogError );
+            StaticMockWeaver.InterceptStatics( assemblyPath, ModuleDefinition.AssemblyResolver );
         }
     }
 }
