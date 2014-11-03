@@ -24,6 +24,11 @@ namespace StaticMocker.Fody
             return new Param( name, typeof( T ) );
         }
 
+        public static Param Out( string name, Type type )
+        {
+            return new Param( name, type );
+        }
+
         private Param( string name, Type type )
         {
             if ( name == null ) throw new ArgumentNullException( "name" );

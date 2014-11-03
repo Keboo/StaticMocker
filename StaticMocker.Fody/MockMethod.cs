@@ -30,7 +30,7 @@ namespace StaticMocker.Fody
             if ( methodInfo.DeclaringType != null )
             {
                 AssemblyName = methodInfo.DeclaringType.Assembly.FullName;
-                TypeName = methodInfo.DeclaringType.Name;
+                TypeName = methodInfo.DeclaringType.FullName;
             }
             MethodName = methodInfo.Name;
             Parameters = parameters ?? new Param[0];
@@ -39,7 +39,7 @@ namespace StaticMocker.Fody
         public T GetOutValue<T>( string parameterName )
         {
             var @param = Parameters.First( x => x.Name == parameterName );
-            return (T)Convert.ChangeType( param.Value, typeof( T ) );
+            return (T)Convert.ChangeType( param.Value ?? default( T ), typeof( T ) );
         }
 
         public MethodInfo GetMethodInfo()
@@ -99,7 +99,7 @@ namespace StaticMocker.Fody
                 int hashCode = ( AssemblyName != null ? AssemblyName.GetHashCode() : 0 );
                 hashCode = ( hashCode * 397 ) ^ ( TypeName != null ? TypeName.GetHashCode() : 0 );
                 hashCode = ( hashCode * 397 ) ^ ( MethodName != null ? MethodName.GetHashCode() : 0 );
-                hashCode = ( hashCode * 397 ) ^ ( Parameters != null ? Parameters.GetHashCode() : 0 );
+                hashCode = ( hashCode * 397 ) ^ ( Parameters != null ? Parameters.Aggregate( 0, ( value, param ) => ( value * 397 ) ^ param.GetHashCode() ) : 0 );
                 return hashCode;
             }
         }

@@ -102,9 +102,18 @@ namespace StaticMocker.Fody
             {
                 var methodExpression = GetMethodExpression( expression );
                 var methodInfo = methodExpression.Method;
+                IList<Param> parameters = new List<Param>();
+
                 foreach ( ParameterInfo parameter in methodInfo.GetParameters() )
                 {
-
+                    if ( parameter.IsOut )
+                    {
+                        parameters.Add( Param.Out( parameter.Name, parameter.ParameterType.GetElementType() ) );
+                    }
+                    else
+                    {
+                        //parameters.Add(Param.In(parameter.Name, ));
+                    }
                 }
                 return new MockMethod( methodInfo, new Param[0] );
             }
