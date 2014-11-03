@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -14,7 +15,7 @@ namespace StaticMocker.Fody
 
         private sealed class StaticMocker : IStaticMock, IStaticInterceptor
         {
-            private readonly HashSet<MethodInfo> _CalledMethods = new HashSet<MethodInfo>();
+            private readonly HashSet<MockMethod> _CalledMethods = new HashSet<MockMethod>();
             private readonly Dictionary<MethodInfo, StaticMethod> _ExpectedMethodCalls = new Dictionary<MethodInfo, StaticMethod>();
 
             public StaticMocker()
@@ -53,10 +54,11 @@ namespace StaticMocker.Fody
 
             private void Verify( Expression methodExpression )
             {
-                var method = GetMethodInfo( methodExpression );
-                if ( !_CalledMethods.Contains( method ) )
+                var mockMehod = GetMockMethod( methodExpression );
+
+                if ( !_CalledMethods.Contains( mockMehod ) )
                 {
-                    throw new StaticMockVerificationException( string.Format( "{0} was not invoked", method ) );
+                    throw new StaticMockVerificationException( string.Format( "{0} was not invoked", mockMehod ) );
                 }
             }
 
@@ -80,7 +82,7 @@ namespace StaticMocker.Fody
             {
                 var methodInfo = mockMethod.GetMethodInfo();
 
-                _CalledMethods.Add( methodInfo );
+                _CalledMethods.Add( mockMethod );
                 StaticMethod staticMethod;
                 if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out staticMethod ) )
                 {
@@ -90,32 +92,34 @@ namespace StaticMocker.Fody
                 return true;
             }
 
-            //bool IStaticInterceptor.AllowMethodCall( MethodInfo methodInfo )
-            //{
-            //    _CalledMethods.Add( methodInfo );
-            //    StaticMethod expected;
-            //    if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out expected ) )
-            //    {
-            //        expected.InvokeReplacement();
-            //        return false;
-            //    }
-            //    return true;
-            //}
-
-            //bool IStaticInterceptor.AllowMethodCall( MethodInfo methodInfo, out object replacement )
-            //{
-            //    _CalledMethods.Add( methodInfo );
-            //    StaticMethod expected;
-            //    if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out expected ) )
-            //    {
-            //        replacement = expected.InvokeReplacement();
-            //        return false;
-            //    }
-            //    replacement = null;
-            //    return true;
-            //}
-
             private static MethodInfo GetMethodInfo( Expression methodExpression )
+            {
+                MethodCallExpression methodCallExpression = GetMethodExpression( methodExpression );
+                return methodCallExpression.Method;
+            }
+
+            private static MockMethod GetMockMethod( Expression expression )
+            {
+                var methodExpression = GetMethodExpression( expression );
+                var methodInfo = methodExpression.Method;
+                foreach ( ParameterInfo parameter in methodInfo.GetParameters() )
+                {
+
+                }
+                return new MockMethod( methodInfo, new Param[0] );
+            }
+
+            private static IList<Param> GetMethodParameters( Expression methodExpression )
+            {
+                MethodCallExpression methodCallExpression = GetMethodExpression( methodExpression );
+                //return methodCallExpression.Arguments.Select(x =>
+                //{
+                //    
+                //}).ToArray();
+                return null;
+            }
+
+            private static MethodCallExpression GetMethodExpression( Expression methodExpression )
             {
                 var lambda = methodExpression as LambdaExpression;
                 if ( lambda == null )
@@ -123,7 +127,7 @@ namespace StaticMocker.Fody
                 var methodCallExpression = lambda.Body as MethodCallExpression;
                 if ( methodCallExpression == null )
                     throw new ArgumentException( "Method expression must be a lambda expression to a void static method", "methodExpression" );
-                return methodCallExpression.Method;
+                return methodCallExpression;
             }
 
             private abstract class StaticMethod
@@ -161,7 +165,7 @@ namespace StaticMocker.Fody
 
                 public override void Handle( MockMethod mockMethod )
                 {
-                    if (_ReplacementCall != null)
+                    if ( _ReplacementCall != null )
                     {
                         mockMethod.ReturnValue = _ReplacementCall();
                     }
