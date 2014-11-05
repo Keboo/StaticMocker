@@ -12,13 +12,13 @@ namespace StaticMocker.Fody.Tests
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.CallsStaticVoidMethod();
-        
+
                 staticMock.Verify( () => StaticClass.VoidMethod() );
             }
         }
-        
+
         [TestMethod]
         public void CanReplaceCallToStaticVoidMethod()
         {
@@ -30,14 +30,14 @@ namespace StaticMocker.Fody.Tests
                     wasCalled = true;
                 } );
                 var sut = new Sut();
-        
+
                 sut.CallsThorwingStaticVoidMethod();
-        
+
                 staticMock.Verify( () => StaticClass.ThrowingVoidMethod() );
                 Assert.IsTrue( wasCalled );
             }
         }
-        
+
         [TestMethod]
         [ExpectedException( typeof( ExpectedException ) )]
         public void WhenStaticVoidMethodIsNotMockedItCallsOriginalMethod()
@@ -45,7 +45,7 @@ namespace StaticMocker.Fody.Tests
             var sut = new Sut();
             sut.CallsThorwingStaticVoidMethod();
         }
-        
+
         [TestMethod]
         [ExpectedException( typeof( StaticMockVerificationException ) )]
         public void WhenStaticVoidMethodIsNotCalled_ItThrowsVerificationException()
@@ -53,27 +53,27 @@ namespace StaticMocker.Fody.Tests
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.DoesNothing();
-        
+
                 staticMock.Verify( () => StaticClass.VoidMethod() );
             }
         }
-        
-        
+
+
         [TestMethod]
         public void CanVerifyCallToStaticMethodWithReturn()
         {
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.CallsStaticMethodWithReturnValue();
-        
+
                 staticMock.Verify( () => StaticClass.StringMethod() );
             }
         }
-        
+
         [TestMethod]
         public void CanReplaceCallToStaticMethodWithReturn()
         {
@@ -82,14 +82,14 @@ namespace StaticMocker.Fody.Tests
             {
                 staticMock.Expect( () => StaticClass.ThrowingStringMethod() ).RatherCall( () => expected );
                 var sut = new Sut();
-        
+
                 var actual = sut.CallsThrowingStaticMethodWithReturnValue();
-        
+
                 Assert.AreEqual( expected, actual );
                 staticMock.Verify( () => StaticClass.ThrowingStringMethod() );
             }
         }
-        
+
         [TestMethod]
         [ExpectedException( typeof( ExpectedException ) )]
         public void WhenStaticMethodWithReturnIsNotMocked_ItCallsOriginalMethod()
@@ -97,7 +97,7 @@ namespace StaticMocker.Fody.Tests
             var sut = new Sut();
             sut.CallsThrowingStaticMethodWithReturnValue();
         }
-        
+
         [TestMethod]
         [ExpectedException( typeof( StaticMockVerificationException ) )]
         public void WhenStaticMethodWithReturnIsNotCalled_ItThrowsVerificationException()
@@ -105,40 +105,40 @@ namespace StaticMocker.Fody.Tests
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.DoesNothing();
-        
+
                 staticMock.Verify( () => StaticClass.StringMethod() );
             }
         }
-        
-        
+
+
         [TestMethod]
         public void CanVerifyCallToStaticVoidMethodWithMatchingStringParameter()
         {
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.CallsVoidWithStringParameter();
-        
+
                 staticMock.Verify( () => StaticClass.VoidWithStringParameter( "Some parameter" ) );
             }
         }
-        
+
         [TestMethod]
-        public void CanVerifyCallToStaticVoidMethodWithUniversalStringParameter()
+        public void CanVerifyCallToStaticVoidMethodWithAnyStringParameter()
         {
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.CallsVoidWithStringParameter();
-        
+
                 staticMock.Verify( () => StaticClass.VoidWithStringParameter( Param.Any<string>() ) );
             }
         }
-        
+
         [TestMethod]
         [ExpectedException( typeof( StaticMockVerificationException ) )]
         public void WhenCallToStaticVoidMethodWithStringDoesNotMatchParameter_IsFailsToVerify()
@@ -146,26 +146,26 @@ namespace StaticMocker.Fody.Tests
             using ( var staticMock = StaticMock.Create() )
             {
                 var sut = new Sut();
-        
+
                 sut.CallsVoidWithStringParameter();
-        
+
                 staticMock.Verify( () => StaticClass.VoidWithStringParameter( "Some other string" ) );
             }
         }
-        
-        
+
+
         [TestMethod]
         public void CanMockMethodWithOutParameter()
         {
             using ( var staticMocker = StaticMock.Create() )
             {
                 int i;
-                staticMocker.Expect( () => int.TryParse( Param.Any<string>(), out i ) ).RatherCall( () => true );
+                staticMocker.Expect( () => int.TryParse( "fubar", out i ) ).RatherCall( () => true ).UseOutValue( 2 );
                 var sut = new Sut();
-        
+
                 int intValue;
                 var result = sut.TryParseInt( "fubar", out intValue );
-        
+
                 Assert.IsTrue( result );
                 Assert.AreEqual( 2, intValue );
             }

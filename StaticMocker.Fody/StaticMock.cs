@@ -16,7 +16,7 @@ namespace StaticMocker.Fody
         private sealed class StaticMocker : IStaticMock, IStaticInterceptor
         {
             private readonly HashSet<MockMethod> _CalledMethods = new HashSet<MockMethod>();
-            private readonly Dictionary<MethodInfo, StaticMethod> _ExpectedMethodCalls = new Dictionary<MethodInfo, StaticMethod>();
+            private readonly Dictionary<MockMethod, StaticMethod> _ExpectedMethodCalls = new Dictionary<MockMethod, StaticMethod>();
 
             public StaticMocker()
             {
@@ -64,7 +64,7 @@ namespace StaticMocker.Fody
 
             public IStaticMethod Expect( Expression<Action> methodExpression )
             {
-                var method = GetMethodInfo( methodExpression );
+                var method = GetMockMethod( methodExpression );
                 var rv = new StaticVoidMethod();
                 _ExpectedMethodCalls[method] = rv;
                 return rv;
@@ -72,7 +72,7 @@ namespace StaticMocker.Fody
 
             public IStaticMethod<T> Expect<T>( Expression<Func<T>> methodExpression )
             {
-                var method = GetMethodInfo( methodExpression );
+                var method = GetMockMethod( methodExpression );
                 var rv = new StaticReturnMethod<T>();
                 _ExpectedMethodCalls[method] = rv;
                 return rv;
@@ -80,11 +80,9 @@ namespace StaticMocker.Fody
 
             bool IStaticInterceptor.AllowMethodCall( MockMethod mockMethod )
             {
-                var methodInfo = mockMethod.GetMethodInfo();
-
                 _CalledMethods.Add( mockMethod );
                 StaticMethod staticMethod;
-                if ( _ExpectedMethodCalls.TryGetValue( methodInfo, out staticMethod ) )
+                if ( _ExpectedMethodCalls.TryGetValue( mockMethod, out staticMethod ) )
                 {
                     staticMethod.Handle( mockMethod );
                     return false;
@@ -92,18 +90,14 @@ namespace StaticMocker.Fody
                 return true;
             }
 
-            private static MethodInfo GetMethodInfo( Expression methodExpression )
-            {
-                MethodCallExpression methodCallExpression = GetMethodExpression( methodExpression );
-                return methodCallExpression.Method;
-            }
-
             private static MockMethod GetMockMethod( Expression expression )
             {
                 var methodExpression = GetMethodExpression( expression );
+                var expressionArguments = GetMethodExpressionArguments( methodExpression );
                 var methodInfo = methodExpression.Method;
                 IList<Param> parameters = new List<Param>();
 
+                var expressionArgumentIndex = 0;
                 foreach ( ParameterInfo parameter in methodInfo.GetParameters() )
                 {
                     if ( parameter.IsOut )
@@ -112,20 +106,32 @@ namespace StaticMocker.Fody
                     }
                     else
                     {
-                        //parameters.Add(Param.In(parameter.Name, ));
+                        parameters.Add( Param.In( parameter.Name, parameter.ParameterType,
+                            expressionArguments[expressionArgumentIndex++] ) );
                     }
                 }
-                return new MockMethod( methodInfo, new Param[0] );
+                return new MockMethod( methodInfo, parameters );
             }
 
-            private static IList<Param> GetMethodParameters( Expression methodExpression )
+            private static IList<object> GetMethodExpressionArguments( MethodCallExpression methodExpression )
             {
-                MethodCallExpression methodCallExpression = GetMethodExpression( methodExpression );
-                //return methodCallExpression.Arguments.Select(x =>
-                //{
-                //    
-                //}).ToArray();
-                return null;
+                var rv = new List<object>();
+                foreach ( var argumentExpression in methodExpression.Arguments )
+                {
+                    switch ( argumentExpression.NodeType )
+                    {
+                        case ExpressionType.Constant:
+                            rv.Add( ( (ConstantExpression)argumentExpression ).Value );
+                            break;
+                        case ExpressionType.MemberAccess:
+                            //This will be the out parameter
+                            break;
+                        default:
+                            //TODO: Better exception type
+                            throw new Exception( string.Format( "Could not get value from {0} expression", argumentExpression.NodeType ) );
+                    }
+                }
+                return rv;
             }
 
             private static MethodCallExpression GetMethodExpression( Expression methodExpression )
@@ -141,17 +147,40 @@ namespace StaticMocker.Fody
 
             private abstract class StaticMethod
             {
+                private readonly Dictionary<Tuple<Type, string>, object> _OutParameterValues =
+                    new Dictionary<Tuple<Type, string>, object>();
                 public abstract void Handle( MockMethod mockMethod );
+
+                protected object GetOutValue( Type parameterType, string parameterName )
+                {
+                    object rv;
+                    if ( _OutParameterValues.TryGetValue( Tuple.Create( parameterType, parameterName ), out rv ) )
+                    {
+                        return rv;
+                    }
+                    if ( _OutParameterValues.TryGetValue( Tuple.Create( parameterType, (string)null ), out rv ) )
+                    {
+                        return rv;
+                    }
+                    //TODO: Better exception type
+                    throw new Exception( string.Format( "Could not find out parameter {0} {1}", parameterType.FullName, parameterName ) );
+                }
+
+                public void UseOutValue<TOut>( TOut outValue, string parameterName = null )
+                {
+                    _OutParameterValues[Tuple.Create( typeof( TOut ), parameterName )] = outValue;
+                }
             }
 
             private class StaticVoidMethod : StaticMethod, IStaticMethod
             {
                 private Action _ReplacementCall;
 
-                public void RatherCall( Action replacement )
+                public IStaticMethod RatherCall( Action replacement )
                 {
                     if ( replacement == null ) throw new ArgumentNullException( "replacement" );
                     _ReplacementCall = replacement;
+                    return this;
                 }
 
                 public override void Handle( MockMethod mockMethod )
@@ -166,10 +195,11 @@ namespace StaticMocker.Fody
             {
                 private Func<T> _ReplacementCall;
 
-                public void RatherCall( Func<T> replacement )
+                public IStaticMethod<T> RatherCall( Func<T> replacement )
                 {
                     if ( replacement == null ) throw new ArgumentNullException( "replacement" );
                     _ReplacementCall = replacement;
+                    return this;
                 }
 
                 public override void Handle( MockMethod mockMethod )
@@ -178,7 +208,10 @@ namespace StaticMocker.Fody
                     {
                         mockMethod.ReturnValue = _ReplacementCall();
                     }
-                    //TODO: Out parameters
+                    foreach ( var outParam in mockMethod.Parameters.Where( x => x.ParameterType == ParameterType.Out ) )
+                    {
+                        outParam.Value = GetOutValue( outParam.Type, outParam.Name );
+                    }
                 }
             }
         }

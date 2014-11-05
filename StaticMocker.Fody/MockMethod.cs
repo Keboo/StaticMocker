@@ -38,6 +38,7 @@ namespace StaticMocker.Fody
 
         public T GetOutValue<T>( string parameterName )
         {
+            //TODO: Better exception if the parameter is not found
             var @param = Parameters.First( x => x.Name == parameterName );
             return (T)Convert.ChangeType( param.Value ?? default( T ), typeof( T ) );
         }

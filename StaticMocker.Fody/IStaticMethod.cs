@@ -4,11 +4,13 @@ namespace StaticMocker.Fody
 {
     public interface IStaticMethod
     {
-        void RatherCall( Action replacement );
+        IStaticMethod RatherCall( Action replacement );
+        void UseOutValue<TOut>( TOut outValue, string parameterName = null );
     }
 
     public interface IStaticMethod<in T>
     {
-        void RatherCall( Func<T> replacement );
+        IStaticMethod<T> RatherCall( Func<T> replacement );
+        void UseOutValue<TOut>( TOut outValue, string parameterName = null );
     }
 }
