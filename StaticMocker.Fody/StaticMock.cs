@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace StaticMocker.Fody
 {
@@ -15,7 +14,7 @@ namespace StaticMocker.Fody
 
         private sealed class StaticMocker : IStaticMock, IStaticInterceptor
         {
-            private readonly HashSet<MockMethod> _CalledMethods = new HashSet<MockMethod>();
+            private readonly List<MockMethod> _CalledMethods = new List<MockMethod>();
             private readonly Dictionary<MockMethod, StaticMethod> _ExpectedMethodCalls = new Dictionary<MockMethod, StaticMethod>();
 
             public StaticMocker()
@@ -54,11 +53,11 @@ namespace StaticMocker.Fody
 
             private void Verify( Expression methodExpression )
             {
-                var mockMehod = GetMockMethod( methodExpression );
+                var mockMethod = GetMockMethod( methodExpression );
 
-                if ( !_CalledMethods.Contains( mockMehod ) )
+                if ( !_CalledMethods.Any( mockMethod.IsMatch ) )
                 {
-                    throw new StaticMockVerificationException( string.Format( "{0} was not invoked", mockMehod ) );
+                    throw new StaticMockVerificationException( string.Format( "{0} was not invoked", mockMethod ) );
                 }
             }
 
@@ -93,45 +92,66 @@ namespace StaticMocker.Fody
             private static MockMethod GetMockMethod( Expression expression )
             {
                 var methodExpression = GetMethodExpression( expression );
-                var expressionArguments = GetMethodExpressionArguments( methodExpression );
                 var methodInfo = methodExpression.Method;
-                IList<Param> parameters = new List<Param>();
+                var methodParameters = GetMethodParameters( methodExpression );
 
-                var expressionArgumentIndex = 0;
-                foreach ( ParameterInfo parameter in methodInfo.GetParameters() )
-                {
-                    if ( parameter.IsOut )
-                    {
-                        parameters.Add( Param.Out( parameter.Name, parameter.ParameterType.GetElementType() ) );
-                    }
-                    else
-                    {
-                        parameters.Add( Param.In( parameter.Name, parameter.ParameterType,
-                            expressionArguments[expressionArgumentIndex++] ) );
-                    }
-                }
-                return new MockMethod( methodInfo, parameters );
+                return new MockMethod( methodInfo, methodParameters );
             }
 
-            private static IList<object> GetMethodExpressionArguments( MethodCallExpression methodExpression )
+            private static IList<Param> GetMethodParameters( MethodCallExpression methodExpression )
             {
-                var rv = new List<object>();
-                foreach ( var argumentExpression in methodExpression.Arguments )
+                var methodInfo = methodExpression.Method;
+                var parameterInfos = methodInfo.GetParameters();
+
+                IList<Param> parameters = new List<Param>();
+
+                for ( int i = 0; i < parameterInfos.Length; i++ )
                 {
+                    var parameter = parameterInfos[i];
+                    var argumentExpression = methodExpression.Arguments[i];
+
+                    Type parameterType = parameter.IsOut
+                        ? parameter.ParameterType.GetElementType()
+                        : parameter.ParameterType;
+                    string parameterName = parameter.Name;
+                    ParameterType paramType = parameter.IsOut ? ParameterType.Out : ParameterType.In;
+
                     switch ( argumentExpression.NodeType )
                     {
                         case ExpressionType.Constant:
-                            rv.Add( ( (ConstantExpression)argumentExpression ).Value );
+
+                            if ( parameter.IsOut )
+                            {
+                                parameters.Add( Param.Out( parameterName, parameterType ) );
+                            }
+                            else
+                            {
+                                parameters.Add( Param.In( parameterName, parameterType,
+                                    ( (ConstantExpression)argumentExpression ).Value ) );
+                            }
                             break;
                         case ExpressionType.MemberAccess:
-                            //This will be the out parameter
+                            if ( IsAnyParam( (MemberExpression)argumentExpression ) )
+                            {
+                                parameters.Add( Param.CreateAny( parameterName, parameterType, paramType ) );
+                            }
+                            else if ( parameter.IsOut )
+                            {
+                                parameters.Add( Param.Out( parameterName, parameterType ) );
+                            }
+                            //Else: This will be the out parameter case
                             break;
                         default:
                             //TODO: Better exception type
                             throw new Exception( string.Format( "Could not get value from {0} expression", argumentExpression.NodeType ) );
                     }
                 }
-                return rv;
+                return parameters;
+            }
+
+            private static bool IsAnyParam( MemberExpression argumentExpression )
+            {
+                return typeof (Param<>).MakeGenericType(argumentExpression.Type).GetField("Any") == argumentExpression.Member;
             }
 
             private static MethodCallExpression GetMethodExpression( Expression methodExpression )

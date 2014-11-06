@@ -135,7 +135,7 @@ namespace StaticMocker.Fody.Tests
 
                 sut.CallsVoidWithStringParameter();
 
-                staticMock.Verify( () => StaticClass.VoidWithStringParameter( Param.Any<string>() ) );
+                staticMock.Verify( () => StaticClass.VoidWithStringParameter( Param<string>.Any ) );
             }
         }
 

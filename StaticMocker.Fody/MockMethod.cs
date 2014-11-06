@@ -68,6 +68,25 @@ namespace StaticMocker.Fody
                 string.Join( ", ", Parameters.Select( x => string.Format( "{0} {1}", x.Type, x.Name ) ) ) );
         }
 
+        public bool IsMatch( MockMethod other )
+        {
+            if ( string.Equals( AssemblyName, other.AssemblyName ) &&
+                string.Equals( TypeName, other.TypeName ) &&
+                string.Equals( MethodName, other.MethodName ) &&
+                Parameters.Count == other.Parameters.Count )
+            {
+                for ( int i = 0; i < Parameters.Count; i++ )
+                {
+                    if ( !Parameters[i].Matches( other.Parameters[i] ) )
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
         public override bool Equals( object obj )
         {
             if ( ReferenceEquals( null, obj ) ) return false;

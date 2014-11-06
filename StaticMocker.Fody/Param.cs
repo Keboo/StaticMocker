@@ -2,18 +2,13 @@
 
 namespace StaticMocker.Fody
 {
+    public static class Param<T>
+    {
+        public static T Any;
+    }
+
     public class Param
     {
-        public static T Any<T>()
-        {
-            return default( T );
-        }
-
-        public static int Is( int i )
-        {
-            return i;
-        }
-
         public static Param In<T>( string name, T value )
         {
             return new Param( name, typeof( T ), ParameterType.In ) { Value = value };
@@ -34,6 +29,14 @@ namespace StaticMocker.Fody
             return new Param( name, type, ParameterType.Out );
         }
 
+        internal static Param CreateAny( string name, Type type, ParameterType parameterType )
+        {
+            return new Param( name, type, parameterType )
+            {
+                MatchesAnyValue = true
+            };
+        }
+
         private Param( string name, Type type, ParameterType parameterType )
         {
             if ( name == null ) throw new ArgumentNullException( "name" );
@@ -43,6 +46,8 @@ namespace StaticMocker.Fody
             Type = type;
             ParameterType = parameterType;
         }
+
+        private bool MatchesAnyValue { get; set; }
 
         public string Name { get; private set; }
         public Type Type { get; private set; }
@@ -81,6 +86,12 @@ namespace StaticMocker.Fody
             return string.Format( "{0} {1} = {{{2}}}", Type.Name, Name, Value ?? "" );
         }
 
+        public virtual bool Matches( Param other )
+        {
+            return string.Equals( Name, other.Name ) &&
+                   Type == other.Type &&
+                   ( MatchesAnyValue || Equals( Value, other.Value ) );
+        }
     }
 
     public enum ParameterType
