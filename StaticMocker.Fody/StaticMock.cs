@@ -142,8 +142,7 @@ namespace StaticMocker.Fody
                             //Else: This will be the out parameter case
                             break;
                         default:
-                            //TODO: Better exception type
-                            throw new Exception( string.Format( "Could not get value from {0} expression", argumentExpression.NodeType ) );
+                            throw new StaticMockException( string.Format( "Could not get value from {0} expression", argumentExpression.NodeType ) );
                     }
                 }
                 return parameters;
@@ -189,8 +188,7 @@ namespace StaticMocker.Fody
                     {
                         return rv;
                     }
-                    //TODO: Better exception type
-                    throw new Exception( string.Format( "Could not find out parameter {0} {1}", parameterType.FullName, parameterName ) );
+                    throw new StaticMockException( string.Format( "Could not find out parameter {0} {1}", parameterType.FullName, parameterName ) );
                 }
 
                 protected void UseOutValueImpl<TOut>( TOut outValue, string parameterName )

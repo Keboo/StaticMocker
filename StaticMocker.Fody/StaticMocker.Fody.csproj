@@ -64,8 +64,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StaticMock.cs" />
     <Compile Include="StaticMockAssemblyTarget.cs" />
+    <Compile Include="StaticMockCompileException.cs" />
+    <Compile Include="StaticMockException.cs" />
     <Compile Include="StaticMockVerificationException.cs" />
-    <Compile Include="StaticMockWeaver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
