@@ -80,10 +80,10 @@ namespace StaticMocker.Fody
             bool IStaticInterceptor.AllowMethodCall( MockMethod mockMethod )
             {
                 _CalledMethods.Add( mockMethod );
-                StaticMethod staticMethod;
-                if ( _ExpectedMethodCalls.TryGetValue( mockMethod, out staticMethod ) )
+                var key = _ExpectedMethodCalls.Keys.FirstOrDefault(x => x.IsMatch(mockMethod));
+                if ( key != null )
                 {
-                    staticMethod.Handle( mockMethod );
+                    _ExpectedMethodCalls[key].Handle( mockMethod );
                     return false;
                 }
                 return true;
@@ -203,7 +203,7 @@ namespace StaticMocker.Fody
             {
                 private Action _ReplacementCall;
 
-                public IStaticMethod RatherCall( Action replacement )
+                public IStaticMethod Return( Action replacement )
                 {
                     if ( replacement == null ) throw new ArgumentNullException( "replacement" );
                     _ReplacementCall = replacement;
@@ -228,7 +228,7 @@ namespace StaticMocker.Fody
             {
                 private Func<T> _ReplacementCall;
 
-                public IStaticMethod<T> RatherCall( Func<T> replacement )
+                public IStaticMethod<T> Return( Func<T> replacement )
                 {
                     if ( replacement == null ) throw new ArgumentNullException( "replacement" );
                     _ReplacementCall = replacement;

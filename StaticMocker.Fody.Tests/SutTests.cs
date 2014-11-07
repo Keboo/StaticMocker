@@ -1,4 +1,5 @@
-﻿using LibraryToTest;
+﻿using System;
+using LibraryToTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace StaticMocker.Fody.Tests
@@ -25,7 +26,7 @@ namespace StaticMocker.Fody.Tests
             using ( var staticMock = StaticMock.Create() )
             {
                 bool wasCalled = false;
-                staticMock.Expect( () => StaticClass.ThrowingVoidMethod() ).RatherCall( () =>
+                staticMock.Expect( () => StaticClass.ThrowingVoidMethod() ).Return( () =>
                 {
                     wasCalled = true;
                 } );
@@ -80,7 +81,7 @@ namespace StaticMocker.Fody.Tests
             const string expected = "expected string";
             using ( var staticMock = StaticMock.Create() )
             {
-                staticMock.Expect( () => StaticClass.ThrowingStringMethod() ).RatherCall( () => expected );
+                staticMock.Expect( () => StaticClass.ThrowingStringMethod() ).Return( () => expected );
                 var sut = new Sut();
 
                 var actual = sut.CallsThrowingStaticMethodWithReturnValue();
@@ -160,7 +161,7 @@ namespace StaticMocker.Fody.Tests
             using ( var staticMocker = StaticMock.Create() )
             {
                 int i;
-                staticMocker.Expect( () => int.TryParse( "fubar", out i ) ).RatherCall( () => true ).UseOutValue( 2 );
+                staticMocker.Expect( () => int.TryParse( "fubar", out i ) ).Return( () => true ).UseOutValue( 2 );
                 var sut = new Sut();
 
                 int intValue;
@@ -176,8 +177,8 @@ namespace StaticMocker.Fody.Tests
         {
             using ( var staticMocker = StaticMock.Create() )
             {
-                staticMocker.Expect(() => StaticClass.MultipleOutParameters(out Param<int>.Any, out Param<string>.Any, out Param<int>.Any))
-                    .UseOutValue(42, "one").UseOutValue(43, "two").UseOutValue("my string value", "emptyString");
+                staticMocker.Expect( () => StaticClass.MultipleOutParameters( out Param<int>.Any, out Param<string>.Any, out Param<int>.Any ) )
+                    .UseOutValue( 42, "one" ).UseOutValue( 43, "two" ).UseOutValue( "my string value", "emptyString" );
                 var sut = new Sut();
 
                 int first, second;
@@ -186,6 +187,22 @@ namespace StaticMocker.Fody.Tests
                 Assert.AreEqual( "my string value", result );
                 Assert.AreEqual( 42, first );
                 Assert.AreEqual( 43, second );
+            }
+        }
+
+        [TestMethod]
+        public void CanMockMultipleStaticCalls()
+        {
+            using ( var staticMocker = StaticMock.Create() )
+            {
+                var myGuid = new Guid( "979EE592-5F5F-456A-A5A0-79D6696FFB5B" );
+                staticMocker.Expect( () => Guid.NewGuid() ).Return( () => myGuid );
+                staticMocker.Expect( () => int.Parse( Param<string>.Any ) ).Return( () => 5 );
+                var sut = new Sut();
+
+                var result = sut.MakesMultipleStaticCalls( "fubar" );
+
+                Assert.AreEqual( Tuple.Create( myGuid, 5 ), result );
             }
         }
     }

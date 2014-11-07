@@ -1,4 +1,6 @@
-﻿namespace LibraryToTest
+﻿using System;
+
+namespace LibraryToTest
 {
     public class Sut
     {
@@ -41,6 +43,11 @@
             string rv;
             StaticClass.MultipleOutParameters( out first, out rv, out second );
             return rv;
+        }
+
+        public Tuple<Guid, int> MakesMultipleStaticCalls( string toParse )
+        {
+            return new Tuple<Guid, int>( Guid.NewGuid(), int.Parse( toParse ) );
         }
     }
 }
