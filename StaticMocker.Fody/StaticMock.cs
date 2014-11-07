@@ -151,7 +151,7 @@ namespace StaticMocker.Fody
 
             private static bool IsAnyParam( MemberExpression argumentExpression )
             {
-                return typeof (Param<>).MakeGenericType(argumentExpression.Type).GetField("Any") == argumentExpression.Member;
+                return typeof( Param<> ).MakeGenericType( argumentExpression.Type ).GetField( "Any" ) == argumentExpression.Member;
             }
 
             private static MethodCallExpression GetMethodExpression( Expression methodExpression )
@@ -169,9 +169,16 @@ namespace StaticMocker.Fody
             {
                 private readonly Dictionary<Tuple<Type, string>, object> _OutParameterValues =
                     new Dictionary<Tuple<Type, string>, object>();
-                public abstract void Handle( MockMethod mockMethod );
 
-                protected object GetOutValue( Type parameterType, string parameterName )
+                public virtual void Handle(MockMethod mockMethod)
+                {
+                    foreach ( var outParam in mockMethod.Parameters.Where( x => x.ParameterType == ParameterType.Out ) )
+                    {
+                        outParam.Value = GetOutValue( outParam.Type, outParam.Name );
+                    }
+                }
+
+                private object GetOutValue( Type parameterType, string parameterName )
                 {
                     object rv;
                     if ( _OutParameterValues.TryGetValue( Tuple.Create( parameterType, parameterName ), out rv ) )
@@ -186,7 +193,7 @@ namespace StaticMocker.Fody
                     throw new Exception( string.Format( "Could not find out parameter {0} {1}", parameterType.FullName, parameterName ) );
                 }
 
-                public void UseOutValue<TOut>( TOut outValue, string parameterName = null )
+                protected void UseOutValueImpl<TOut>( TOut outValue, string parameterName )
                 {
                     _OutParameterValues[Tuple.Create( typeof( TOut ), parameterName )] = outValue;
                 }
@@ -203,11 +210,17 @@ namespace StaticMocker.Fody
                     return this;
                 }
 
+                public IStaticMethod UseOutValue<TOut>( TOut outValue, string parameterName = null )
+                {
+                    UseOutValueImpl( outValue, parameterName );
+                    return this;
+                }
+
                 public override void Handle( MockMethod mockMethod )
                 {
                     if ( _ReplacementCall != null )
                         _ReplacementCall();
-                    //TODO: Out parameters
+                    base.Handle(mockMethod);
                 }
             }
 
@@ -222,16 +235,19 @@ namespace StaticMocker.Fody
                     return this;
                 }
 
+                public IStaticMethod<T> UseOutValue<TOut>(TOut outValue, string parameterName = null)
+                {
+                    UseOutValueImpl(outValue, parameterName);
+                    return this;
+                }
+
                 public override void Handle( MockMethod mockMethod )
                 {
                     if ( _ReplacementCall != null )
                     {
                         mockMethod.ReturnValue = _ReplacementCall();
                     }
-                    foreach ( var outParam in mockMethod.Parameters.Where( x => x.ParameterType == ParameterType.Out ) )
-                    {
-                        outParam.Value = GetOutValue( outParam.Type, outParam.Name );
-                    }
+                    base.Handle(mockMethod);
                 }
             }
         }

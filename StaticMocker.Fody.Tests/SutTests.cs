@@ -170,5 +170,23 @@ namespace StaticMocker.Fody.Tests
                 Assert.AreEqual( 2, intValue );
             }
         }
+
+        [TestMethod]
+        public void WhenMockingMethodWithMultipleOutParameters_ItUsesParametersByName()
+        {
+            using ( var staticMocker = StaticMock.Create() )
+            {
+                staticMocker.Expect(() => StaticClass.MultipleOutParameters(out Param<int>.Any, out Param<string>.Any, out Param<int>.Any))
+                    .UseOutValue(42, "one").UseOutValue(43, "two").UseOutValue("my string value", "emptyString");
+                var sut = new Sut();
+
+                int first, second;
+                var result = sut.CallsMultipleOutParameters( out first, out second );
+
+                Assert.AreEqual( "my string value", result );
+                Assert.AreEqual( 42, first );
+                Assert.AreEqual( 43, second );
+            }
+        }
     }
 }

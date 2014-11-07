@@ -35,5 +35,12 @@
         {
             return int.TryParse( @string, out intValue );
         }
+
+        public string CallsMultipleOutParameters( out int first, out int second )
+        {
+            string rv;
+            StaticClass.MultipleOutParameters( out first, out rv, out second );
+            return rv;
+        }
     }
 }

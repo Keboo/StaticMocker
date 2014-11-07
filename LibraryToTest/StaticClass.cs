@@ -26,5 +26,12 @@
         {
             
         }
+
+        public static void MultipleOutParameters( out int one, out string emptyString, out int two )
+        {
+            one = 1;
+            two = 2;
+            emptyString = "";
+        }
     }
 }
