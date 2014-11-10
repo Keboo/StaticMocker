@@ -205,5 +205,21 @@ namespace StaticMocker.Fody.Tests
                 Assert.AreEqual( Tuple.Create( myGuid, 5 ), result );
             }
         }
+
+        [TestMethod]
+        public void WhenCallsIntParse_ItUsesIntParse()
+        {
+            using ( IStaticMock staticMocker = StaticMock.Create() )
+            {
+                const string input = "Not An Int";
+                staticMocker.Expect( () => int.Parse( input ) ).Return( () => 42 );
+
+                var sut = new Sut();
+                int result = sut.CallsIntParse( input );
+
+                Assert.AreEqual( 42, result );
+                staticMocker.Verify( () => int.Parse( input ) );
+            }
+        }
     }
 }

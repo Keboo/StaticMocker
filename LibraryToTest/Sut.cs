@@ -49,5 +49,10 @@ namespace LibraryToTest
         {
             return new Tuple<Guid, int>( Guid.NewGuid(), int.Parse( toParse ) );
         }
+
+        public int CallsIntParse( string inputString )
+        {
+            return int.Parse( inputString );
+        }
     }
 }
