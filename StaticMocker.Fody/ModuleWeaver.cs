@@ -102,8 +102,8 @@ public class ModuleWeaver
             CompilerResults compileResults = provider.CompileAssemblyFromDom( compileParameters, _CompileUnit );
             if ( compileResults.Errors.HasErrors )
             {
-                throw new StaticMockCompileException(string.Join(Environment.NewLine,
-                    compileResults.Errors.Cast<CompilerError>().Select(x => x.ErrorText)));
+                throw new StaticMockCompileException( string.Join( Environment.NewLine,
+                    compileResults.Errors.Cast<CompilerError>().Select( x => x.ErrorText ) ) );
             }
             var staticMockAssembly = AssemblyDefinition.ReadAssembly( staticMocksLib );
             assemblyToMock.MainModule.AssemblyReferences.Add( staticMockAssembly.Name );
@@ -241,34 +241,50 @@ public class ModuleWeaver
 
             var conditional = new CodeConditionStatement( interceptCall );
 
-            var callMethod = new CodeMethodInvokeExpression(
-                new CodeTypeReferenceExpression( method.DeclaringType.FullName ), method.Name );
-            foreach ( var parameter in codeMethod.Parameters.Cast<CodeParameterDeclarationExpression>() )
+            CodeExpression originalCall;
+            if ( method.IsGetter)
             {
-                var variable = new CodeDirectionExpression( parameter.Direction, new CodeVariableReferenceExpression( parameter.Name ) );
-                callMethod.Parameters.Add( variable );
-
-                switch ( parameter.Direction )
+                var methodName = method.Name;
+                if (method.Name.StartsWith("get_"))
                 {
-                    case FieldDirection.Out:
-                        var getOutValue = new CodeMethodInvokeExpression(
-                            new CodeVariableReferenceExpression( mockMethodVariable.Name ),
-                            GET_OUT_VARIABLE_METHOD,
-                            new CodePrimitiveExpression( parameter.Name ) );
-                        getOutValue.Method.TypeArguments.Add( parameter.Type );
-                        conditional.TrueStatements.Add( new CodeAssignStatement(
-                            new CodeVariableReferenceExpression( parameter.Name ), getOutValue ) );
-                        break;
+                    methodName = methodName.Substring( 4 );
                 }
+                originalCall = new CodePropertyReferenceExpression( 
+                    new CodeTypeReferenceExpression( method.DeclaringType.FullName ), methodName );
+            }
+            else
+            {
+                var callMethod = new CodeMethodInvokeExpression(
+                new CodeTypeReferenceExpression( method.DeclaringType.FullName ), method.Name );
+
+                foreach ( var parameter in codeMethod.Parameters.Cast<CodeParameterDeclarationExpression>() )
+                {
+                    var variable = new CodeDirectionExpression( parameter.Direction, new CodeVariableReferenceExpression( parameter.Name ) );
+                    callMethod.Parameters.Add( variable );
+
+                    switch ( parameter.Direction )
+                    {
+                        case FieldDirection.Out:
+                            var getOutValue = new CodeMethodInvokeExpression(
+                                new CodeVariableReferenceExpression( mockMethodVariable.Name ),
+                                GET_OUT_VARIABLE_METHOD,
+                                new CodePrimitiveExpression( parameter.Name ) );
+                            getOutValue.Method.TypeArguments.Add( parameter.Type );
+                            conditional.TrueStatements.Add( new CodeAssignStatement(
+                                new CodeVariableReferenceExpression( parameter.Name ), getOutValue ) );
+                            break;
+                    }
+                }
+                originalCall = callMethod;
             }
 
             if ( method.ReturnType.FullName == typeof( void ).FullName )
             {
-                conditional.FalseStatements.Add( callMethod );
+                conditional.FalseStatements.Add( originalCall );
             }
             else
             {
-                conditional.FalseStatements.Add( new CodeMethodReturnStatement( callMethod ) );
+                conditional.FalseStatements.Add( new CodeMethodReturnStatement( originalCall ) );
                 var propertyGetter = new CodePropertyReferenceExpression(
                     new CodeVariableReferenceExpression( mockMethodVariable.Name ), RETURN_VALUE_PROPERTY );
                 var caseExpression = new CodeCastExpression( method.ReturnType.FullName, propertyGetter );

@@ -221,5 +221,54 @@ namespace StaticMocker.Fody.Tests
                 staticMocker.Verify( () => int.Parse( input ) );
             }
         }
+
+        [TestMethod]
+        public void WhenCallingIntTryParse_ItUsesIntTryParse()
+        {
+            using ( IStaticMock staticMocker = StaticMock.Create() )
+            {
+                const string input = "Not An Int";
+                int outValue;
+                staticMocker.Expect( () => int.TryParse( input, out outValue ) ).Return( () => true ).UseOutValue( 42 );
+
+                var sut = new Sut();
+                int actualOutValue;
+                bool result = sut.CallsIntTryParse( input, out actualOutValue );
+
+                Assert.IsTrue( result );
+                Assert.AreEqual( 42, actualOutValue );
+            }
+        }
+
+        [TestMethod]
+        public void WhenCallingIntTryParseWithAnyString_ItReturns7()
+        {
+            using ( IStaticMock staticMocker = StaticMock.Create() )
+            {
+                staticMocker.Expect( () => int.TryParse( Param<string>.Any, out Param<int>.Any ) ).Return( () => true ).UseOutValue( 7 );
+
+                var sut = new Sut();
+                int actualOutValue;
+                bool result = sut.CallsIntTryParse( "Any string", out actualOutValue );
+
+                Assert.IsTrue( result );
+                Assert.AreEqual( 7, actualOutValue );
+            }
+        }
+
+        [TestMethod]
+        public void WhenCreatingNewGuid_ItUsesMockValue()
+        {
+            using ( IStaticMock staticMocker = StaticMock.Create() )
+            {
+                var expectedGuid = Guid.NewGuid();
+                staticMocker.Expect( () => Guid.NewGuid() ).Return( () => expectedGuid );
+
+                var sut = new Sut();
+                Guid result = sut.CreateNewGuid();
+
+                Assert.AreEqual( expectedGuid, result );
+            }
+        }
     }
 }

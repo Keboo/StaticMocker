@@ -54,5 +54,20 @@ namespace LibraryToTest
         {
             return int.Parse( inputString );
         }
+
+        public bool CallsIntTryParse( string inputString, out int outValue )
+        {
+            return int.TryParse( inputString, out outValue );
+        }
+
+        public Guid CreateNewGuid()
+        {
+            return Guid.NewGuid();
+        }
+
+        public DateTime CurrentDate()
+        {
+            return DateTime.Now;
+        }
     }
 }
