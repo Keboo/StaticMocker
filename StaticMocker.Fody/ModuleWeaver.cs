@@ -75,8 +75,8 @@ public class ModuleWeaver
         if ( _CompileUnit != null )
         {
             string assemblyPath = assemblyToMock.MainModule.FullyQualifiedName;
-            string staticMocksLib = Path.Combine( Path.GetDirectoryName( assemblyPath ) ?? "",
-                Path.GetFileNameWithoutExtension( assemblyPath ) + ".StaticMocks" + Path.GetExtension( assemblyPath ) );
+            string staticMocksLib = Path.GetFullPath( Path.Combine( @".\bin\Debug",
+                string.Format("{0}.StaticMocks{1}", Path.GetFileName(assemblyPath), Path.GetExtension(assemblyPath))));
             new FileInfo( staticMocksLib ).Delete();
 
             _CompileUnit.ReferencedAssemblies.Add( assemblyPath );
@@ -85,8 +85,7 @@ public class ModuleWeaver
 
             //TODO: Change this to use DefineConstant
 #if DEBUG
-            // Create a TextWriter to a StreamWriter to the output file. 
-
+            // Create a TextWriter to a StreamWriter to the output file.
             using ( var sw = new StreamWriter( @"C:\Temp\Output.cs", false ) )
             using ( var tw = new IndentedTextWriter( sw, "    " ) )
             {
@@ -97,7 +96,7 @@ public class ModuleWeaver
 #endif
 
             var compileParameters = new CompilerParameters();
-            compileParameters.OutputAssembly = Path.GetFullPath( staticMocksLib );
+            compileParameters.OutputAssembly = staticMocksLib;
 
             CompilerResults compileResults = provider.CompileAssemblyFromDom( compileParameters, _CompileUnit );
             if ( compileResults.Errors.HasErrors )
@@ -242,14 +241,14 @@ public class ModuleWeaver
             var conditional = new CodeConditionStatement( interceptCall );
 
             CodeExpression originalCall;
-            if ( method.IsGetter)
+            if ( method.IsGetter )
             {
                 var methodName = method.Name;
-                if (method.Name.StartsWith("get_"))
+                if ( method.Name.StartsWith( "get_" ) )
                 {
                     methodName = methodName.Substring( 4 );
                 }
-                originalCall = new CodePropertyReferenceExpression( 
+                originalCall = new CodePropertyReferenceExpression(
                     new CodeTypeReferenceExpression( method.DeclaringType.FullName ), methodName );
             }
             else
